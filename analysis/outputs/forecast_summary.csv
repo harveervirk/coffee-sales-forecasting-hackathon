@@ -1,0 +1,2 @@
+selected_model,forecast_start_date,forecast_end_date,historical_total_revenue,forecast_total_revenue,expected_growth_percent,best_model_mae,best_model_rmse,best_model_mape
+Holt-Winters,2024-01-01,2024-06-30,84327.0,40915.0,-4.7,43.9574,57.1252,24.4945
