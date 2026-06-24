@@ -51,3 +51,15 @@ Team Workflow
 5. Open a pull request into main.
 
 Do not commit passwords, API keys, .env files, virtual environments, or confidential datasets.
+
+Members
+
+Fantu, Franoll
+
+Khalid, Farah
+
+Liang, Wilson
+
+Moores, Jacob
+
+Virk, Harveer
