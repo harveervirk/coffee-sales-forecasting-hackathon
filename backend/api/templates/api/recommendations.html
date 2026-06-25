@@ -1,0 +1,89 @@
+{% extends 'api/base.html' %}
+{% load static %}
+{% block title %}Recommendations – CanAI Café{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container-xl px-4">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb mb-2">
+      <li class="breadcrumb-item"><a href="/">Overview</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Recommendations</li>
+    </ol></nav>
+    <h1><i class="bi bi-lightbulb me-2"></i>Recommendations</h1>
+    <p class="lead">Data-driven actions generated from forecast and historical analysis</p>
+  </div>
+</div>
+
+<div class="container-xl px-4 pb-4">
+
+  <!-- Executive summary -->
+  <div class="section-label mb-2"><i class="bi bi-stars"></i> Executive Summary</div>
+  <div id="rec-summary" class="mb-4">
+    <div class="insight-card"><div class="loading-state"><div class="spinner-border spinner-border-sm text-coffee"></div><span class="ms-2 text-muted">Generating summary…</span></div></div>
+  </div>
+
+  <!-- Filters + legend -->
+  <div class="d-flex align-items-center gap-3 mb-3 flex-wrap section-controls">
+    <div class="d-flex align-items-center gap-1">
+      <label for="f-priority" class="text-muted" style="font-size:.82rem;font-weight:600;">Priority:</label>
+      <select id="f-priority" class="form-select form-select-sm" style="width:auto;" onchange="filterRecs()" aria-label="Filter by priority">
+        <option value="">All</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <span class="priority-badge priority-high"><i class="bi bi-fire"></i>High</span>
+      <span class="priority-badge priority-medium"><i class="bi bi-dash-circle"></i>Medium</span>
+      <span class="priority-badge priority-low"><i class="bi bi-info-circle"></i>Low</span>
+    </div>
+  </div>
+
+  <!-- Recommendation cards -->
+  <div id="rec-cards" class="mb-4" role="list" aria-label="Recommendation cards">
+    <div class="loading-state"><div class="spinner-border spinner-border-sm text-coffee"></div><span class="ms-2 text-muted">Loading recommendations…</span></div>
+  </div>
+
+  <!-- Action plan -->
+  <div class="section-label mb-2"><i class="bi bi-calendar-check"></i> Action Plan</div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="action-plan-col ap-immediate">
+        <div class="ap-header" style="color:#EF4444;"><i class="bi bi-lightning-fill me-2"></i>Immediate Actions</div>
+        <div id="ap-immediate">
+          <div class="loading-state"><div class="spinner-border spinner-border-sm text-danger" style="width:1rem;height:1rem;"></div><span class="ms-2 text-muted">Loading…</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="action-plan-col ap-month">
+        <div class="ap-header" style="color:#F59E0B;"><i class="bi bi-calendar-week me-2"></i>Next 30 Days</div>
+        <div id="ap-month">
+          <div class="loading-state"><div class="spinner-border spinner-border-sm text-warning" style="width:1rem;height:1rem;"></div><span class="ms-2 text-muted">Loading…</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="action-plan-col ap-quarter">
+        <div class="ap-header" style="color:#3B82F6;"><i class="bi bi-calendar-month me-2"></i>Next Quarter</div>
+        <div id="ap-quarter">
+          <div class="loading-state"><div class="spinner-border spinner-border-sm text-info" style="width:1rem;height:1rem;"></div><span class="ms-2 text-muted">Loading…</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="info-box">
+    <i class="bi bi-info-circle me-1"></i>
+    All recommendations are generated automatically from forecast and sales data.
+    They are not manually curated. Review each with operational context before taking action.
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'api/js/recommendations.js' %}"></script>
+{% endblock %}

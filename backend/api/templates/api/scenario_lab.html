@@ -1,0 +1,166 @@
+{% extends 'api/base.html' %}
+{% load static %}
+{% block title %}Scenario Lab – CanAI Café{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container-xl px-4">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb mb-2">
+      <li class="breadcrumb-item"><a href="/">Overview</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Scenario Lab</li>
+    </ol></nav>
+    <h1><i class="bi bi-sliders me-2"></i>Scenario Lab</h1>
+    <p class="lead">Model what-if scenarios — adjust traffic, pricing, discounts, and regional growth</p>
+  </div>
+</div>
+
+<div class="container-xl px-4 pb-4">
+
+  <!-- Disclaimer -->
+  <div class="warn-box mb-4">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <strong>This is a planning tool, not a guarantee.</strong>
+    Results are estimates based on transparent linear formulas.
+  </div>
+
+  <div class="row g-4">
+
+    <!-- Controls -->
+    <div class="col-lg-4">
+      <div class="scenario-panel">
+        <h5 class="fw-bold mb-4"><i class="bi bi-sliders me-2 text-coffee"></i>Scenario Controls</h5>
+
+        <div class="slider-control">
+          <label for="s-traffic">
+            <span><i class="bi bi-people me-1"></i>Customer Traffic Change</span>
+            <span class="slider-value" id="v-traffic">0%</span>
+          </label>
+          <input type="range" id="s-traffic" min="-20" max="30" value="0" step="1"
+                 oninput="updateSlider('traffic',this.value)" aria-label="Customer traffic change, -20% to +30%">
+          <div class="d-flex justify-content-between text-muted" style="font-size:.72rem;"><span>−20%</span><span>+30%</span></div>
+        </div>
+
+        <div class="slider-control">
+          <label for="s-price">
+            <span><i class="bi bi-currency-dollar me-1"></i>Price Change</span>
+            <span class="slider-value" id="v-price">0%</span>
+          </label>
+          <input type="range" id="s-price" min="-15" max="20" value="0" step="1"
+                 oninput="updateSlider('price',this.value)" aria-label="Price change, -15% to +20%">
+          <div class="d-flex justify-content-between text-muted" style="font-size:.72rem;"><span>−15%</span><span>+20%</span></div>
+        </div>
+
+        <div class="slider-control">
+          <label for="s-discount">
+            <span><i class="bi bi-tag me-1"></i>Promotional Discount</span>
+            <span class="slider-value" id="v-discount">0%</span>
+          </label>
+          <input type="range" id="s-discount" min="0" max="25" value="0" step="1"
+                 oninput="updateSlider('discount',this.value)" aria-label="Promotional discount, 0% to 25%">
+          <div class="d-flex justify-content-between text-muted" style="font-size:.72rem;"><span>0%</span><span>25%</span></div>
+        </div>
+
+        <div class="slider-control">
+          <label for="s-demand">
+            <span><i class="bi bi-bag me-1"></i>Product Demand Change</span>
+            <span class="slider-value" id="v-demand">0%</span>
+          </label>
+          <input type="range" id="s-demand" min="-20" max="30" value="0" step="1"
+                 oninput="updateSlider('demand',this.value)" aria-label="Product demand change, -20% to +30%">
+          <div class="d-flex justify-content-between text-muted" style="font-size:.72rem;"><span>−20%</span><span>+30%</span></div>
+        </div>
+
+        <div class="slider-control">
+          <label for="s-regional">
+            <span><i class="bi bi-geo-alt me-1"></i>Regional Growth Change</span>
+            <span class="slider-value" id="v-regional">0%</span>
+          </label>
+          <input type="range" id="s-regional" min="-15" max="25" value="0" step="1"
+                 oninput="updateSlider('regional',this.value)" aria-label="Regional growth, -15% to +25%">
+          <div class="d-flex justify-content-between text-muted" style="font-size:.72rem;"><span>−15%</span><span>+25%</span></div>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+          <button class="btn btn-sm btn-outline-secondary border-coffee flex-fill"
+                  onclick="resetScenario()" aria-label="Reset to baseline">
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset to Baseline
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="col-lg-8">
+      <!-- KPI cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="scenario-result-card sc-baseline h-100">
+            <div class="sc-value" id="sc-baseline-rev">$40,915</div>
+            <div class="sc-label">Baseline Forecast</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="scenario-result-card sc-scenario h-100" id="sc-revenue-card">
+            <div class="sc-value" id="sc-revenue">$40,915</div>
+            <div class="sc-label">Scenario Revenue</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="scenario-result-card sc-scenario h-100">
+            <div class="sc-value" id="sc-pct"><span class="text-muted">0.0%</span></div>
+            <div class="sc-label">Change vs Baseline</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="scenario-result-card sc-baseline h-100">
+            <div class="sc-value" id="sc-transactions">4,978</div>
+            <div class="sc-label">Est. Transactions</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="scenario-result-card sc-baseline" style="text-align:left;">
+            <div class="sc-value" id="sc-avg-order" style="font-size:1.3rem;">$54.70</div>
+            <div class="sc-label">Est. Average Order Value</div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="scenario-result-card sc-scenario" style="text-align:left;">
+            <div id="sc-label-growth" style="font-size:1rem;font-weight:600;" class="text-success">No changes applied</div>
+            <div class="sc-label">Scenario Summary</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scenario chart -->
+      <div class="chart-container mb-4">
+        <div class="chart-title">Monthly Revenue — Baseline vs Scenario</div>
+        <p class="chart-subtitle" style="font-size:.78rem;color:var(--text-muted);margin:-4px 0 8px;">Monthly revenue distributed using historical seasonal weights (Jan–Jun)</p>
+        <canvas id="scenario-chart" height="240" aria-label="Baseline vs scenario revenue bar chart" role="img"></canvas>
+      </div>
+
+      <!-- Explanation -->
+      <div class="scenario-explanation mb-3" id="sc-explanation" role="region" aria-live="polite">
+        No changes applied. Showing baseline forecast values.
+      </div>
+
+      <!-- Assumptions -->
+      <div class="scenario-assumptions methodology-section">
+        <strong style="font-size:.82rem;">Assumptions & Formula:</strong>
+        <ul id="sc-assumptions" class="mb-0 mt-1">
+          <li>scenario_revenue = baseline × (1 + traffic/100) × (1 + price/100) × (1 − discount/100) × (1 + demand/100) × (1 + regional/100)</li>
+          <li>scenario_transactions = baseline_transactions × (1 + traffic/100)</li>
+          <li>These estimates do not account for demand elasticity or competitor behaviour.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'api/js/scenario_page.js' %}"></script>
+{% endblock %}

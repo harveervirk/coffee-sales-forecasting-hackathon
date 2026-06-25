@@ -1,0 +1,174 @@
+{% extends 'api/base.html' %}
+{% load static %}
+{% block title %}Data Quality – CanAI Café{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container-xl px-4">
+    <h1><i class="bi bi-shield-check me-2" aria-hidden="true"></i>Data Quality Centre</h1>
+    <p class="lead">Assessment, cleaning log, and methodology for the CanAI Café dataset</p>
+  </div>
+</div>
+
+<div class="container-xl px-4 pb-4">
+
+  <!-- Quality score + score formula + before/after -->
+  <div class="section-label mb-2"><i class="bi bi-patch-check me-1"></i>Overall Quality Score</div>
+  <div class="row g-4 mb-4 align-items-stretch">
+    <div class="col-md-3">
+      <div class="card h-100 p-4 text-center d-flex flex-column align-items-center justify-content-center">
+        <div id="quality-ring" class="mb-3">
+          <div class="quality-score-ring" id="quality-ring-inner">
+            <div class="quality-score-value" id="q-score-val">—</div>
+            <div class="quality-score-label">Quality</div>
+          </div>
+        </div>
+        <div id="q-score-sub" class="text-muted" style="font-size:.82rem;">Loading…</div>
+      </div>
+    </div>
+    <div class="col-md-5">
+      <div class="card h-100 p-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-coffee"></i>Score Formula</h5>
+        <p class="text-muted" style="font-size:.87rem;">
+          Three fields are assessed: <strong>Transaction Date</strong>, <strong>Payment Method</strong>,
+          and <strong>Location</strong>. Each is scored as valid rows ÷ total rows.
+          The overall score is their average.
+        </p>
+        <div class="row g-2 mt-1" id="score-breakdown">
+          <div class="col-4"><div class="card border-0 bg-light p-2 text-center"><div class="skeleton skeleton-value mb-1"></div><div class="text-muted" style="font-size:.72rem;">Dates</div></div></div>
+          <div class="col-4"><div class="card border-0 bg-light p-2 text-center"><div class="skeleton skeleton-value mb-1"></div><div class="text-muted" style="font-size:.72rem;">Payments</div></div></div>
+          <div class="col-4"><div class="card border-0 bg-light p-2 text-center"><div class="skeleton skeleton-value mb-1"></div><div class="text-muted" style="font-size:.72rem;">Locations</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100 p-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-arrow-left-right me-2 text-coffee"></i>Before vs. After Cleaning</h5>
+        <div class="row g-2">
+          <div class="col-6">
+            <div class="ba-card ba-before">
+              <div class="ba-value text-danger">10,000</div>
+              <div class="ba-label">Original Records</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="ba-card ba-after">
+              <div class="ba-value text-success" id="ba-clean">—</div>
+              <div class="ba-label">Clean Records</div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-3 row g-2" id="ba-detail-row">
+          <div class="col-6"><div class="text-center"><div class="skeleton skeleton-value"></div><div class="text-muted" style="font-size:.72rem;">Invalid Dates</div></div></div>
+          <div class="col-6"><div class="text-center"><div class="skeleton skeleton-value"></div><div class="text-muted" style="font-size:.72rem;">Unknown Values</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Issue cards -->
+  <div class="section-label mb-2"><i class="bi bi-exclamation-triangle me-1"></i>Issue Breakdown</div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card h-100 p-3" id="dq-dates-card"><div class="skeleton skeleton-value mb-2"></div><div class="skeleton skeleton-text w-75"></div></div></div>
+    <div class="col-md-4"><div class="card h-100 p-3" id="dq-payments-card"><div class="skeleton skeleton-value mb-2"></div><div class="skeleton skeleton-text w-75"></div></div></div>
+    <div class="col-md-4"><div class="card h-100 p-3" id="dq-locations-card"><div class="skeleton skeleton-value mb-2"></div><div class="skeleton skeleton-text w-75"></div></div></div>
+  </div>
+
+  <!-- Compact issue progress summary + impact note (replaces large donut chart) -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-6">
+      <div class="card p-4 h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart-steps me-2 text-coffee"></i>Issue Summary</h6>
+        <div id="issue-progress-bars">
+          <div class="loading-state"><div class="spinner-border spinner-border-sm text-coffee"></div><span class="ms-2 text-muted">Loading…</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card p-4 h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-question-circle me-2 text-coffee"></i>Impact on Analysis</h6>
+        <ul class="list-unstyled mb-0" style="font-size:.87rem;">
+          <li class="mb-2 d-flex gap-2"><i class="bi bi-calendar-x text-danger mt-1 flex-shrink-0"></i><div><strong>Invalid dates</strong> are excluded from the forecasting time series but their revenue is counted in aggregate totals.</div></li>
+          <li class="mb-2 d-flex gap-2"><i class="bi bi-credit-card text-warning mt-1 flex-shrink-0"></i><div><strong>Unknown payment methods</strong> are included in revenue summaries and reported separately for transparency.</div></li>
+          <li class="d-flex gap-2"><i class="bi bi-geo-alt text-info mt-1 flex-shrink-0"></i><div><strong>Unknown locations</strong> are shown as their own group in location analytics rather than silently dropped.</div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dataset overview cards -->
+  <div class="section-label mb-2"><i class="bi bi-calendar-range me-1"></i>Dataset Overview</div>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3"><div class="card kpi-card h-100 p-3" id="dq-earliest"><div class="skeleton skeleton-value mb-1"></div><div class="skeleton skeleton-text w-75"></div></div></div>
+    <div class="col-6 col-md-3"><div class="card kpi-card h-100 p-3" id="dq-latest"><div class="skeleton skeleton-value mb-1"></div><div class="skeleton skeleton-text w-75"></div></div></div>
+    <div class="col-6 col-md-3"><div class="card kpi-card h-100 p-3" id="dq-transactions"><div class="skeleton skeleton-value mb-1"></div><div class="skeleton skeleton-text w-75"></div></div></div>
+    <div class="col-6 col-md-3"><div class="card kpi-card h-100 p-3" id="dq-total-rows"><div class="skeleton skeleton-value mb-1"></div><div class="skeleton skeleton-text w-75"></div></div></div>
+  </div>
+
+  <!-- Cleaning actions table -->
+  <div class="section-label mb-2"><i class="bi bi-table me-1"></i>Cleaning Actions Log</div>
+  <div class="chart-container mb-4">
+    <div class="table-scroll">
+      <table class="table data-table mb-0" id="cleaning-table" aria-label="Data cleaning actions table">
+        <thead>
+          <tr><th>Issue</th><th>Records Affected</th><th>Resolution</th><th>Why It Matters</th><th>Status</th></tr>
+        </thead>
+        <tbody id="cleaning-tbody">
+          <tr><td colspan="5"><div class="loading-state"><div class="spinner-border spinner-border-sm text-coffee"></div><span class="ms-2 text-muted">Loading…</span></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Cleaning methodology accordion -->
+  <div class="section-label mb-2"><i class="bi bi-book me-1"></i>Cleaning Methodology</div>
+  <div class="accordion mb-4" id="methodologyAccordion">
+    <div class="accordion-item border-0 mb-2">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#method1" aria-expanded="false">
+          How were dates validated?
+        </button>
+      </h2>
+      <div id="method1" class="accordion-collapse collapse" data-bs-parent="#methodologyAccordion">
+        <div class="accordion-body">
+          <code>pd.to_datetime(df["Transaction Date"], errors="coerce")</code> was applied to all date values.
+          Any row where the date could not be parsed returned <code>NaT</code>. These 240 rows are counted as
+          invalid and excluded from the forecasting time series, but their revenue is counted in aggregate summaries.
+        </div>
+      </div>
+    </div>
+    <div class="accordion-item border-0 mb-2">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#method2" aria-expanded="false">
+          How were payment methods handled?
+        </button>
+      </h2>
+      <div id="method2" class="accordion-collapse collapse" data-bs-parent="#methodologyAccordion">
+        <div class="accordion-body">
+          Values of <code>UNKNOWN</code> and <code>ERR_PM_102</code> were flagged as unknown.
+          These 555 rows are retained because the revenue is real — only the payment channel is unidentifiable.
+        </div>
+      </div>
+    </div>
+    <div class="accordion-item border-0 mb-2">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#method3" aria-expanded="false">
+          How were names normalised?
+        </button>
+      </h2>
+      <div id="method3" class="accordion-collapse collapse" data-bs-parent="#methodologyAccordion">
+        <div class="accordion-body">
+          All Item and Province values had whitespace stripped with <code>.str.strip()</code>
+          and consistent casing applied with <code>.str.title()</code>, preventing duplicates
+          in product and regional aggregations.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'api/js/data_quality.js' %}"></script>
+{% endblock %}

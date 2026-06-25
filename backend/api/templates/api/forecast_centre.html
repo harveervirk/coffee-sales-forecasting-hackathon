@@ -1,0 +1,114 @@
+{% extends 'api/base.html' %}
+{% load static %}
+{% block title %}Forecast Centre – CanAI Café{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container-xl px-4">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb mb-2">
+      <li class="breadcrumb-item"><a href="/">Overview</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Forecast Centre</li>
+    </ol></nav>
+    <h1><i class="bi bi-graph-up-arrow me-2"></i>Forecast Centre</h1>
+    <p class="lead">Six-month revenue projection · Model comparison · Methodology</p>
+  </div>
+</div>
+
+<div class="container-xl px-4 pb-4">
+
+  <!-- Summary cards -->
+  <div class="section-label mb-2"><i class="bi bi-bookmark-star"></i> Forecast Summary</div>
+  <div class="row g-3 mb-4" id="fc-summary-row">
+    {% for _ in "1234" %}<div class="col-6 col-xl-3"><div class="card forecast-card h-100 p-3"><div class="skeleton skeleton-value mb-2"></div><div class="skeleton skeleton-text w-50"></div></div></div>{% endfor %}
+  </div>
+
+  <!-- Forecast chart -->
+  <div class="section-label mb-2"><i class="bi bi-graph-up"></i> Monthly Forecast with Uncertainty Range</div>
+  <div class="chart-container mb-4">
+    <div class="chart-title">Six-Month Revenue Forecast (Jan–Jun 2024)</div>
+    <div id="fc-chart-wrap" style="min-height:60px;">
+      <div class="loading-state"><div class="spinner-border spinner-border-sm text-coffee"></div><span class="ms-2 text-muted">Loading forecast…</span></div>
+    </div>
+    <canvas id="fc-chart" height="130" aria-label="Forecast revenue chart with upper and lower bounds" role="img" style="display:none;"></canvas>
+  </div>
+
+  <!-- Actual vs predicted -->
+  <div class="section-label mb-2"><i class="bi bi-table"></i> Monthly Forecast Table</div>
+  <div class="chart-container mb-4">
+    <div class="chart-title">Month-by-Month Projection</div>
+    <div class="table-scroll">
+      <table class="table data-table mb-0" id="forecast-table" aria-label="Monthly forecast table">
+        <thead><tr><th>Month</th><th>Forecast Revenue</th><th>Lower Bound</th><th>Upper Bound</th><th>Range Width</th></tr></thead>
+        <tbody id="fc-tbody">
+          <tr><td colspan="5"><div class="loading-state"><div class="spinner-border spinner-border-sm text-coffee"></div><span class="ms-2 text-muted">Loading…</span></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Model comparison -->
+  <div class="section-label mb-2"><i class="bi bi-cpu"></i> Model Comparison</div>
+  <div class="row g-3 mb-4" id="model-cards-row">
+    {% for _ in "12" %}<div class="col-md-6"><div class="card model-card h-100 p-4"><div class="skeleton skeleton-value mb-2"></div><div class="skeleton skeleton-text w-75 mb-1"></div><div class="skeleton skeleton-text w-50"></div></div></div>{% endfor %}
+  </div>
+
+  <!-- Metrics chart + table -->
+  <div class="row g-4 mb-4">
+    <div class="col-lg-5">
+      <div class="chart-container">
+        <div class="chart-title">Error Metrics Comparison (MAE vs RMSE)</div>
+        <canvas id="metrics-chart" height="180" aria-label="Model error metrics chart" role="img"></canvas>
+      </div>
+    </div>
+    <div class="col-lg-7">
+      <div class="chart-container h-100">
+        <div class="chart-title">Model Metrics Table</div>
+        <div class="table-scroll">
+          <table class="table data-table mb-0" aria-label="Model metrics table">
+            <thead><tr><th>Model</th><th>MAE</th><th>RMSE</th><th>MAPE</th><th>Selected</th></tr></thead>
+            <tbody id="metrics-tbody">
+              <tr><td colspan="5"><div class="loading-state"><div class="spinner-border spinner-border-sm text-coffee"></div><span class="ms-2 text-muted">Loading…</span></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="info-box mt-3">
+          <i class="bi bi-check2-circle me-1"></i>
+          The model with the <strong>lowest MAE</strong> on the 60-day holdout period was selected.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Methodology -->
+  <div class="section-label mb-2 methodology-section"><i class="bi bi-book"></i> Methodology & Assumptions</div>
+  <div class="row g-4 methodology-section">
+    <div class="col-md-6">
+      <div class="card h-100 p-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-cpu me-2 text-coffee"></i>Models Evaluated</h5>
+        <h6 class="fw-semibold">Seasonal Naive Baseline</h6>
+        <p class="text-muted" style="font-size:.87rem;">Predicts each day's revenue as equal to the same day 7 days earlier. Simple, interpretable, captures weekly patterns.</p>
+        <h6 class="fw-semibold mt-3">Holt-Winters Exponential Smoothing</h6>
+        <p class="text-muted" style="font-size:.87rem;">Captures level, trend, and weekly seasonality (seasonal_periods=7). Uses additive components via statsmodels.</p>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card h-100 p-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-rulers me-2 text-coffee"></i>Error Metrics Explained</h5>
+        <dl class="mb-0">
+          <dt>MAE – Mean Absolute Error</dt>
+          <dd class="text-muted mb-3" style="font-size:.87rem;">Average dollar difference between forecast and actual. Easier to interpret because it's in the same unit as revenue. <em>Used for model selection.</em></dd>
+          <dt>RMSE – Root Mean Squared Error</dt>
+          <dd class="text-muted mb-3" style="font-size:.87rem;">Penalises large errors more than MAE. Useful for flagging occasional big misses.</dd>
+          <dt>MAPE – Mean Absolute Percentage Error</dt>
+          <dd class="text-muted mb-3" style="font-size:.87rem;">Average error as a percentage of actual. Zero-revenue days are excluded to prevent division errors.</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'api/js/forecast.js' %}?v=2"></script>
+{% endblock %}
