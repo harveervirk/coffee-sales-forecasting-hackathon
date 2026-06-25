@@ -1,0 +1,3 @@
+model,mae,rmse,mape,selected
+Holt-Winters,43.9574,57.1252,24.4945,True
+Seasonal Naive,58.925,71.75,35.5062,False
