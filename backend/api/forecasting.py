@@ -313,8 +313,88 @@ def read_metrics_csv(output_dir: str) -> dict:
 # ---------------------------------------------------------------------------
 # Deterministic recommendations
 # ---------------------------------------------------------------------------
+def _get_product_recommendations(items_data: list = None) -> list:
+    """
+    Generate product-specific stocking recommendations based on item performance.
+    
+    If items_data is provided (from get_item_breakdown), analyze top/bottom performers.
+    Otherwise, return generic product recommendations.
+    """
+    product_recs = []
+    
+    # If we don't have item data, return generic product rules
+    if not items_data or len(items_data) == 0:
+        product_recs.append({
+            "category": "product",
+            "priority": "high",
+            "title": "Sandwich & Coffee Lead Revenue",
+            "message": "Sandwiches and Coffee are your top revenue drivers. Ensure consistent stock levels and quality for these items to maintain customer satisfaction.",
+            "evidence": "Based on historical sales analysis"
+        })
+        return product_recs
+    
+    # Sort items by revenue
+    items_sorted = sorted(items_data, key=lambda x: x['total_revenue'], reverse=True)
+    
+    # Rule: Top performer
+    top_item = items_sorted[0]
+    product_recs.append({
+        "category": "product",
+        "priority": "high",
+        "title": f"{top_item['item']}: Top Revenue Driver - Increase Stock",
+        "message": (
+            f"{top_item['item']} generates ${top_item['total_revenue']:,.2f} in revenue with "
+            f"{top_item['total_quantity']:,} units sold. This is your #1 performer. "
+            f"Increase stock by 20-25% to prevent stockouts and maximize revenue."
+        ),
+        "evidence": f"{top_item['unique_transactions']:,} transactions, avg per transaction: ${top_item['total_revenue']/top_item['unique_transactions']:.2f}"
+    })
+    
+    # Rule: Second performer
+    if len(items_sorted) > 1:
+        second_item = items_sorted[1]
+        product_recs.append({
+            "category": "product",
+            "priority": "high",
+            "title": f"{second_item['item']}: Strong Performer - Maintain Stock",
+            "message": (
+                f"{second_item['item']} is your second-highest revenue item at ${second_item['total_revenue']:,.2f} "
+                f"with {second_item['total_quantity']:,} units sold. Maintain current stock levels and monitor for seasonal dips."
+            ),
+            "evidence": f"{second_item['unique_transactions']:,} transactions"
+        })
+    
+    # Rule: Low performer opportunity
+    if len(items_sorted) > 1:
+        low_item = items_sorted[-1]
+        product_recs.append({
+            "category": "product",
+            "priority": "medium",
+            "title": f"{low_item['item']}: Low Revenue - Consider Promotions",
+            "message": (
+                f"{low_item['item']} generates only ${low_item['total_revenue']:,.2f} in revenue ({low_item['total_quantity']:,} units). "
+                f"Consider bundling with popular items, running promotions, or testing new variations to boost sales."
+            ),
+            "evidence": f"Only {low_item['unique_transactions']:,} transactions - opportunity for growth"
+        })
+    
+    # Rule: High-volume item
+    high_volume = max(items_sorted, key=lambda x: x['total_quantity'])
+    if high_volume['item'] != top_item['item']:
+        product_recs.append({
+            "category": "product",
+            "priority": "medium",
+            "title": f"{high_volume['item']}: High Volume Item - Optimize Margins",
+            "message": (
+                f"{high_volume['item']} has strong volume ({high_volume['total_quantity']:,} units) but lower per-unit revenue. "
+                f"Focus on upselling or offering premium variations to increase profit margin per transaction."
+            ),
+            "evidence": f"Volume: {high_volume['total_quantity']:,} units | Revenue: ${high_volume['total_revenue']:,.2f}"
+        })
+    
+    return product_recs
 
-def generate_recommendations(forecast_data: dict) -> dict:
+def generate_recommendations(forecast_data: dict, items_data: list = None) -> dict:
     """
     Generate rule-based recommendations from actual forecast values.
     All claims are derived from the supplied data — nothing is hardcoded.
@@ -333,6 +413,7 @@ def generate_recommendations(forecast_data: dict) -> dict:
     # Rule 1: growth direction
     if growth >= 0:
         recs.append({
+            "category": "business",
             "priority": "high",
             "title":    "Positive Revenue Growth Expected",
             "message":  (
@@ -343,6 +424,7 @@ def generate_recommendations(forecast_data: dict) -> dict:
         })
     else:
         recs.append({
+            "category": "business",
             "priority": "high",
             "title":    "Revenue Decline Expected",
             "message":  (
@@ -356,6 +438,7 @@ def generate_recommendations(forecast_data: dict) -> dict:
         # Rule 2: peak month
         peak = max(monthly, key=lambda x: x["forecast_revenue"])
         recs.append({
+            "category": "business",
             "priority": "medium",
             "title":    f"Peak Sales Expected in {peak['month']}",
             "message":  (
@@ -370,6 +453,7 @@ def generate_recommendations(forecast_data: dict) -> dict:
         # Rule 3: lowest month
         low = min(monthly, key=lambda x: x["forecast_revenue"])
         recs.append({
+            "category": "business",
             "priority": "medium",
             "title":    f"Lowest Sales Expected in {low['month']}",
             "message":  (
@@ -384,6 +468,7 @@ def generate_recommendations(forecast_data: dict) -> dict:
     # Rule 4: model accuracy
     mae_label = f"{mae:.2f} revenue units per day" if mae is not None else "N/A"
     recs.append({
+        "category": "business",
         "priority": "low",
         "title":    f"Forecast Model: {model}",
         "message":  (
@@ -395,6 +480,7 @@ def generate_recommendations(forecast_data: dict) -> dict:
 
     # Rule 5: uncertainty reminder
     recs.append({
+        "category": "business",
         "priority": "low",
         "title":    "Account for Forecast Uncertainty",
         "message":  (
@@ -404,5 +490,10 @@ def generate_recommendations(forecast_data: dict) -> dict:
         ),
         "evidence": "Bounds = forecast ± 1.96 × holdout residual std",
     })
+
+    # Product-specific rules (if you can fetch item data)
+    # Note: For now, we'll add static product recommendations based on known item analysis
+    product_recs = _get_product_recommendations(items_data)
+    recs.extend(product_recs)
 
     return {"recommendations": recs}

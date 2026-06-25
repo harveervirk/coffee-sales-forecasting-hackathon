@@ -20,7 +20,7 @@ from .services import (
 SALES_FILE = (
     Path(settings.BASE_DIR).parent
     / "data"
-    / "CanAI Cafe 2023 Sales Information - CLeaned.xlsx"
+    / "CanAI Cafe 2023 Sales Information UPDATED.xlsx"
 )
 
 OUTPUT_DIR = Path(settings.BASE_DIR).parent / "analysis" / "outputs"
@@ -120,5 +120,8 @@ def recommendations(request):
         data = read_forecast_csv(str(OUTPUT_DIR))
     except FileNotFoundError:
         return JsonResponse({"error": _FORECAST_NOT_READY}, status=503)
+   
+    # NEW: Get item data for product recommendations
+    items_data = get_item_breakdown(str(SALES_FILE))
 
-    return JsonResponse(generate_recommendations(data))
+    return JsonResponse(generate_recommendations(data, items_data))
