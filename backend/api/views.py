@@ -21,7 +21,7 @@ from .services import (
 SALES_FILE = (
     Path(settings.BASE_DIR).parent
     / "data"
-    / "CanAI Cafe 2023 Sales Information - CLeaned.xlsx"
+    / "CanAI Cafe 2023 Sales Information UPDATED.xlsx"
 )
 
 OUTPUT_DIR = Path(settings.BASE_DIR).parent / "analysis" / "outputs"
