@@ -1,0 +1,133 @@
+{% extends 'api/base.html' %}
+{% load static %}
+{% block title %}Sales Insights – CanAI Café{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container-xl px-4">
+    <h1><i class="bi bi-bar-chart-line me-2" aria-hidden="true"></i>Sales Insights</h1>
+    <p class="lead">2023 breakdown by month, product, province, and location</p>
+  </div>
+</div>
+
+<div class="container-xl px-4 pb-4">
+
+  <!-- Filters + metric selector -->
+  <div class="filter-bar mb-4" role="search" aria-label="Data filters">
+    <div class="d-flex align-items-center gap-1">
+      <label for="f-item" class="mb-0">Item</label>
+      <select id="f-item" onchange="applyFilters()" aria-label="Filter by item">
+        <option value="">All items</option>
+      </select>
+    </div>
+    <div class="d-flex align-items-center gap-1">
+      <label for="f-province" class="mb-0">Province</label>
+      <select id="f-province" onchange="applyFilters()" aria-label="Filter by province">
+        <option value="">All provinces</option>
+      </select>
+    </div>
+    <div class="d-flex align-items-center gap-1">
+      <label for="f-location" class="mb-0">Location</label>
+      <select id="f-location" onchange="applyFilters()" aria-label="Filter by location">
+        <option value="">All locations</option>
+      </select>
+    </div>
+    <div class="d-flex align-items-center gap-1">
+      <label for="f-payment" class="mb-0">Payment</label>
+      <select id="f-payment" onchange="applyFilters()" aria-label="Filter by payment method">
+        <option value="">All methods</option>
+      </select>
+    </div>
+    <button class="btn btn-sm" style="background:var(--coffee);color:#fff;border-radius:6px;"
+            onclick="resetFilters()" aria-label="Reset all filters">
+      <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+    </button>
+    <span id="filter-badge" class="filter-active-badge" style="display:none;">Filtered</span>
+    <div class="ms-auto d-flex align-items-center gap-1" role="group" aria-label="Select metric">
+      <span class="text-muted" style="font-size:.8rem;white-space:nowrap;">View:</span>
+      <button type="button" class="btn btn-sm active" id="btn-revenue" onclick="setMetric('revenue')" aria-pressed="true">Revenue</button>
+      <button type="button" class="btn btn-sm" id="btn-quantity" onclick="setMetric('quantity')" aria-pressed="false">Quantity</button>
+      <button type="button" class="btn btn-sm" id="btn-transactions" onclick="setMetric('transactions')" aria-pressed="false">Txns</button>
+    </div>
+  </div>
+
+  <!-- Single monthly chart -->
+  <div class="section-label mb-2"><i class="bi bi-calendar3 me-1"></i>Monthly Trends</div>
+  <div class="row g-4 mb-4">
+    <div class="col-12">
+      <div class="chart-container">
+        <div class="chart-title" id="monthly-chart-title">Monthly Revenue (2023)</div>
+        <canvas id="monthly-chart" height="90" aria-label="Monthly metric chart" role="img"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Insight cards (3 max) -->
+  <div class="section-label mb-2"><i class="bi bi-lightbulb me-1"></i>Key Insights</div>
+  <div class="row g-3 mb-4" id="insight-cards-row">
+    {% for _ in "123" %}<div class="col-md-4"><div class="card insight-finding-card h-100"><div class="skeleton skeleton-text mb-2"></div><div class="skeleton skeleton-text w-50"></div><div class="skeleton skeleton-text w-75"></div></div></div>{% endfor %}
+  </div>
+
+  <!-- Products -->
+  <div class="section-label mb-2"><i class="bi bi-bag me-1"></i>By Product</div>
+  <div class="row g-4 mb-4">
+    <div class="col-12">
+      <div class="chart-container">
+        <div class="chart-title">Product Breakdown</div>
+        <div class="table-scroll" style="max-height:300px;overflow-y:auto;">
+          <table class="table data-table mb-0" aria-label="Product sales table">
+            <thead><tr><th>#</th><th>Item</th><th>Revenue</th><th>Qty</th><th>Txns</th></tr></thead>
+            <tbody id="item-tbody"><tr><td colspan="5"><div class="loading-state"><div class="spinner-border spinner-border-sm text-coffee"></div><span class="ms-2 text-muted">Loading…</span></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Provinces + Payment + Location -->
+  <div class="row g-4 mb-2">
+
+    <!-- Provinces -->
+    <div class="col-lg-6">
+      <div class="section-label mb-2"><i class="bi bi-map me-1"></i>By Province</div>
+      <div class="chart-container mb-3">
+        <div class="chart-title" id="prov-chart-title">Revenue by Province</div>
+        <canvas id="prov-chart" height="220" aria-label="Revenue by province chart" role="img"></canvas>
+      </div>
+      <div class="chart-container">
+        <div class="chart-title">Province Table</div>
+        <div class="table-scroll" style="max-height:200px;overflow-y:auto;">
+          <table class="table data-table mb-0" aria-label="Province sales table">
+            <thead><tr><th>#</th><th>Province</th><th>Revenue</th><th>Qty</th></tr></thead>
+            <tbody id="prov-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment + Location -->
+    <div class="col-lg-6">
+      <div class="section-label mb-2">
+        <i class="bi bi-credit-card me-1"></i>Payment Methods
+        <small class="text-muted ms-1" style="font-size:.72rem;font-weight:400;">(estimated)</small>
+      </div>
+      <div class="chart-container mb-3">
+        <div class="chart-title">Payment Method Distribution</div>
+        <canvas id="payment-chart" height="200" aria-label="Payment method chart" role="img"></canvas>
+      </div>
+
+      <div class="section-label mb-2"><i class="bi bi-geo-alt me-1"></i>By Location</div>
+      <div class="chart-container">
+        <div class="chart-title">Revenue by Location</div>
+        <canvas id="loc-chart" height="160" aria-label="Revenue by location chart" role="img"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'api/js/analytics.js' %}"></script>
+{% endblock %}

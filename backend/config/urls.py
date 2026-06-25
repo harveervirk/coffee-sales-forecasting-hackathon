@@ -17,7 +17,17 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from api import views as portal
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
+
+    # Executive portal pages
+    path('', portal.overview, name='overview'),
+    path('analytics/', portal.analytics, name='analytics'),
+    path('forecast-centre/', portal.forecast_centre, name='forecast-centre'),
+    path('scenario-lab/', portal.scenario_lab, name='scenario-lab'),
+    path('recommendations/', portal.recommendations_page, name='recommendations-page'),
+    path('data-quality/', portal.data_quality, name='data-quality'),
 ]

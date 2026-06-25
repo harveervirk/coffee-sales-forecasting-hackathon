@@ -2,6 +2,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.http import JsonResponse
+from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
 from .forecasting import (
@@ -122,3 +123,31 @@ def recommendations(request):
         return JsonResponse({"error": _FORECAST_NOT_READY}, status=503)
 
     return JsonResponse(generate_recommendations(data))
+
+
+# ---------------------------------------------------------------------------
+# Portal pages (server-rendered; all data loaded client-side via the APIs)
+# ---------------------------------------------------------------------------
+
+def overview(request):
+    return render(request, 'api/overview.html', {'active_page': 'overview'})
+
+
+def analytics(request):
+    return render(request, 'api/analytics.html', {'active_page': 'analytics'})
+
+
+def forecast_centre(request):
+    return render(request, 'api/forecast_centre.html', {'active_page': 'forecast-centre'})
+
+
+def recommendations_page(request):
+    return render(request, 'api/recommendations.html', {'active_page': 'recommendations-page'})
+
+
+def data_quality(request):
+    return render(request, 'api/data_quality.html', {'active_page': 'data-quality'})
+
+
+def scenario_lab(request):
+    return render(request, 'api/scenario_lab.html', {'active_page': 'scenario-lab'})

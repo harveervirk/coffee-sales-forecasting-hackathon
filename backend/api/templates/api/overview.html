@@ -1,0 +1,88 @@
+{% extends 'api/base.html' %}
+{% load static %}
+{% block title %}Overview – CanAI Café{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container-xl px-4">
+    <h1><i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Executive Overview</h1>
+    <p class="lead">2023 performance summary and six-month revenue forecast</p>
+  </div>
+</div>
+
+<div class="container-xl px-4 pb-4">
+
+  <!-- KPI cards -->
+  <div class="section-label mb-2"><i class="bi bi-bar-chart-fill me-1"></i>2023 Performance</div>
+  <div class="row g-3 mb-4" id="kpi-row" aria-label="Key performance indicators">
+    {% for _ in "123456" %}
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card kpi-card h-100 p-3"><div class="skeleton skeleton-value mb-2"></div><div class="skeleton skeleton-text w-75"></div></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Forecast summary (3 cards) -->
+  <div class="section-label mb-2"><i class="bi bi-graph-up-arrow me-1"></i>Six-Month Forecast</div>
+  <div class="row g-3 mb-4" id="forecast-kpi-row">
+    {% for _ in "123" %}
+    <div class="col-12 col-md-4">
+      <div class="card forecast-card h-100 p-3"><div class="skeleton skeleton-value mb-2"></div><div class="skeleton skeleton-text w-50"></div></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Business alerts -->
+  <div class="section-label mb-2"><i class="bi bi-bell me-1"></i>Business Alerts</div>
+  <div class="row g-3 mb-4" id="alerts-row">
+    {% for _ in "123" %}
+    <div class="col-md-4"><div class="card p-3"><div class="skeleton skeleton-value mb-2"></div><div class="skeleton skeleton-text w-75"></div></div></div>
+    {% endfor %}
+  </div>
+
+  <!-- Two charts side by side -->
+  <div class="section-label mb-2"><i class="bi bi-graph-up me-1"></i>Revenue Overview</div>
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="chart-container">
+        <div class="chart-title">Monthly Revenue — 2023</div>
+        <canvas id="monthly-chart" height="300" aria-label="Monthly revenue bar chart" role="img"></canvas>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="chart-container">
+        <div class="chart-title">Six-Month Forecast — Jan–Jun 2024</div>
+        <div id="forecast-chart-wrap">
+          <div class="loading-state"><div class="spinner-border spinner-border-sm text-coffee"></div><span class="ms-2 text-muted">Loading…</span></div>
+        </div>
+        <canvas id="forecast-chart" height="300" aria-label="Forecast revenue chart" role="img" style="display:none;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Executive summary -->
+  <div id="exec-summary" class="mb-4">
+    <div class="insight-card">
+      <div class="loading-state"><div class="spinner-border spinner-border-sm text-coffee"></div><span class="ms-2 text-muted">Loading summary…</span></div>
+    </div>
+  </div>
+
+  <!-- Scenario Lab CTA -->
+  <div class="p-3 rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-2"
+       style="background:#3D1C02;">
+    <span class="text-white" style="font-size:.9rem;">
+      <i class="bi bi-sliders me-1" aria-hidden="true"></i>
+      <strong>Scenario Lab</strong> — model what-if scenarios with pricing and traffic adjustments.
+    </span>
+    <a href="{% url 'scenario-lab' %}" class="btn btn-sm"
+       style="background:var(--amber);color:#fff;border:none;border-radius:8px;white-space:nowrap;">
+      Open Scenario Lab <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+    </a>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'api/js/overview.js' %}"></script>
+{% endblock %}

@@ -934,3 +934,197 @@ class GenerateRecommendationsTests(TestCase):
         recs = generate_recommendations(data)["recommendations"]
         # First recommendation's evidence must reference the forecast total
         self.assertIn("44,000", recs[0]["evidence"])
+
+
+# ===========================================================================
+# Portal page tests
+# ===========================================================================
+
+class PortalPageTests(TestCase):
+    """Tests that every portal page responds correctly."""
+
+    # --- 1–5: each page returns 200 ---
+
+    def test_overview_returns_200(self):
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_analytics_returns_200(self):
+        response = self.client.get('/analytics/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_forecast_centre_returns_200(self):
+        response = self.client.get('/forecast-centre/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_recommendations_page_returns_200(self):
+        response = self.client.get('/recommendations/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_data_quality_returns_200(self):
+        response = self.client.get('/data-quality/')
+        self.assertEqual(response.status_code, 200)
+
+    # --- 6: correct templates used ---
+
+    def test_overview_uses_correct_template(self):
+        response = self.client.get('/')
+        self.assertTemplateUsed(response, 'api/overview.html')
+        self.assertTemplateUsed(response, 'api/base.html')
+
+    def test_analytics_uses_correct_template(self):
+        response = self.client.get('/analytics/')
+        self.assertTemplateUsed(response, 'api/analytics.html')
+        self.assertTemplateUsed(response, 'api/base.html')
+
+    def test_forecast_centre_uses_correct_template(self):
+        response = self.client.get('/forecast-centre/')
+        self.assertTemplateUsed(response, 'api/forecast_centre.html')
+        self.assertTemplateUsed(response, 'api/base.html')
+
+    def test_recommendations_page_uses_correct_template(self):
+        response = self.client.get('/recommendations/')
+        self.assertTemplateUsed(response, 'api/recommendations.html')
+        self.assertTemplateUsed(response, 'api/base.html')
+
+    def test_data_quality_uses_correct_template(self):
+        response = self.client.get('/data-quality/')
+        self.assertTemplateUsed(response, 'api/data_quality.html')
+        self.assertTemplateUsed(response, 'api/base.html')
+
+    # --- 7: navigation links present ---
+
+    def test_navigation_links_present_on_overview(self):
+        content = self.client.get('/').content.decode()
+        self.assertIn('/analytics/', content)
+        self.assertIn('/forecast-centre/', content)
+        self.assertIn('/recommendations/', content)
+        self.assertIn('/data-quality/', content)
+
+    def test_navigation_links_present_on_analytics(self):
+        content = self.client.get('/analytics/').content.decode()
+        self.assertIn('href="/"', content)
+        self.assertIn('/forecast-centre/', content)
+        self.assertIn('/recommendations/', content)
+
+    # --- 8: existing API routes still work ---
+
+    def test_health_api_still_returns_200(self):
+        self.assertEqual(self.client.get('/api/health/').status_code, 200)
+
+    def test_sales_summary_api_still_reachable(self):
+        # The real file may not exist in CI; we only check the URL resolves
+        # (it will return 500 if the Excel is missing, but not 404)
+        status = self.client.get('/api/sales/summary/').status_code
+        self.assertIn(status, [200, 500])
+
+    def test_forecast_api_url_resolves(self):
+        status = self.client.get('/api/forecast/').status_code
+        self.assertIn(status, [200, 503])
+
+    def test_recommendations_api_url_resolves(self):
+        status = self.client.get('/api/recommendations/').status_code
+        self.assertIn(status, [200, 503])
+
+    # --- 9: static file references in HTML ---
+
+    def test_overview_references_dashboard_css(self):
+        content = self.client.get('/').content.decode()
+        self.assertIn('dashboard.css', content)
+
+    def test_overview_references_common_js(self):
+        content = self.client.get('/').content.decode()
+        self.assertIn('common.js', content)
+
+    def test_overview_references_page_js(self):
+        content = self.client.get('/').content.decode()
+        self.assertIn('overview.js', content)
+
+    def test_analytics_references_page_js(self):
+        content = self.client.get('/analytics/').content.decode()
+        self.assertIn('analytics.js', content)
+
+    def test_forecast_centre_references_page_js(self):
+        content = self.client.get('/forecast-centre/').content.decode()
+        self.assertIn('forecast.js', content)
+
+    def test_recommendations_page_references_page_js(self):
+        content = self.client.get('/recommendations/').content.decode()
+        self.assertIn('recommendations.js', content)
+
+    def test_data_quality_references_page_js(self):
+        content = self.client.get('/data-quality/').content.decode()
+        self.assertIn('data_quality.js', content)
+
+    # --- Active page highlighting ---
+
+    def test_overview_marks_overview_nav_active(self):
+        content = self.client.get('/').content.decode()
+        # The overview nav link should carry the 'active' class
+        self.assertIn('nav-link active', content)
+
+    def test_analytics_marks_analytics_nav_active(self):
+        content = self.client.get('/analytics/').content.decode()
+        self.assertIn('nav-link active', content)
+
+    # --- Accessibility: semantic landmarks ---
+
+    def test_overview_has_main_landmark(self):
+        content = self.client.get('/').content.decode()
+        self.assertIn('role="main"', content)
+
+    def test_overview_has_nav_landmark(self):
+        content = self.client.get('/').content.decode()
+        self.assertIn('aria-label="Main navigation"', content)
+
+    def test_overview_has_h1(self):
+        content = self.client.get('/').content.decode()
+        self.assertIn('<h1>', content)
+
+    # --- Scenario Lab ---
+
+    def test_scenario_lab_returns_200(self):
+        response = self.client.get('/scenario-lab/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_scenario_lab_uses_correct_template(self):
+        response = self.client.get('/scenario-lab/')
+        self.assertTemplateUsed(response, 'api/scenario_lab.html')
+        self.assertTemplateUsed(response, 'api/base.html')
+
+    def test_scenario_lab_references_scenario_js(self):
+        content = self.client.get('/scenario-lab/').content.decode()
+        self.assertIn('scenario_page.js', content)
+        self.assertIn('scenario.js', content)
+
+    def test_scenario_lab_in_navigation(self):
+        content = self.client.get('/').content.decode()
+        self.assertIn('/scenario-lab/', content)
+
+    def test_scenario_lab_has_sliders(self):
+        content = self.client.get('/scenario-lab/').content.decode()
+        self.assertIn('s-traffic', content)
+        self.assertIn('s-price', content)
+        self.assertIn('s-discount', content)
+
+    # --- Verify Ask CanAI and Presentation Mode have been removed ---
+
+    def test_ask_canai_removed_from_base(self):
+        """Ask CanAI panel and button must not exist after simplification."""
+        content = self.client.get('/').content.decode()
+        self.assertNotIn('openCanAI', content)
+        self.assertNotIn('canai-panel', content)
+
+    def test_presentation_mode_removed_from_base(self):
+        """Presentation Mode toggle and logic must not exist after simplification."""
+        content = self.client.get('/').content.decode()
+        self.assertNotIn('togglePresentationMode', content)
+        self.assertNotIn('pres-toggle', content)
+
+    def test_services_js_referenced(self):
+        content = self.client.get('/').content.decode()
+        self.assertIn('services.js', content)
+
+    def test_scenario_js_loaded_in_base(self):
+        content = self.client.get('/').content.decode()
+        self.assertIn('scenario.js', content)

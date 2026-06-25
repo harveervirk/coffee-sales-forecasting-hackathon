@@ -1,0 +1,118 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CanAI Café{% endblock %}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="{% static 'api/css/dashboard.css' %}" rel="stylesheet">
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="page-body">
+
+  <!-- ── Navigation ─────────────────────────────────────── -->
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-coffee sticky-top"
+       aria-label="Main navigation">
+    <div class="container-xl px-3 px-lg-4">
+
+      <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'overview' %}">
+        <i class="bi bi-cup-hot-fill text-amber" aria-hidden="true"></i>
+        <span class="fw-bold">CanAI Café</span>
+      </a>
+
+      <span class="dataset-indicator d-none d-xl-inline ms-2 me-3" aria-label="Dataset">
+        <i class="bi bi-database me-1" aria-hidden="true"></i>2023 Dataset
+      </span>
+
+      <button class="navbar-toggler border-0 p-1 ms-auto" type="button"
+              data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav ms-auto gap-1" role="list">
+          <li class="nav-item">
+            <a class="nav-link {% if active_page == 'overview' %}active{% endif %}"
+               href="{% url 'overview' %}"
+               {% if active_page == 'overview' %}aria-current="page"{% endif %}>
+              <i class="bi bi-speedometer2 me-1" aria-hidden="true"></i>Overview
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_page == 'data-quality' %}active{% endif %}"
+               href="{% url 'data-quality' %}"
+               {% if active_page == 'data-quality' %}aria-current="page"{% endif %}>
+              <i class="bi bi-shield-check me-1" aria-hidden="true"></i>Data Quality
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_page == 'analytics' %}active{% endif %}"
+               href="{% url 'analytics' %}"
+               {% if active_page == 'analytics' %}aria-current="page"{% endif %}>
+              <i class="bi bi-bar-chart-line me-1" aria-hidden="true"></i>Sales Insights
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_page == 'forecast-centre' %}active{% endif %}"
+               href="{% url 'forecast-centre' %}"
+               {% if active_page == 'forecast-centre' %}aria-current="page"{% endif %}>
+              <i class="bi bi-graph-up-arrow me-1" aria-hidden="true"></i>Forecast
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_page == 'scenario-lab' %}active{% endif %}"
+               href="{% url 'scenario-lab' %}"
+               {% if active_page == 'scenario-lab' %}aria-current="page"{% endif %}>
+              <i class="bi bi-sliders me-1" aria-hidden="true"></i>Scenario Lab
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_page == 'recommendations-page' %}active{% endif %}"
+               href="{% url 'recommendations-page' %}"
+               {% if active_page == 'recommendations-page' %}aria-current="page"{% endif %}>
+              <i class="bi bi-lightbulb me-1" aria-hidden="true"></i>Recommendations
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Main content ───────────────────────────────────── -->
+  <main class="main-content" role="main" id="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ── Footer ─────────────────────────────────────────── -->
+  <footer class="portal-footer" role="contentinfo" aria-label="Site footer">
+    <div class="container-xl px-4">
+      <div class="row align-items-center py-3">
+        <div class="col-md-6">
+          <span class="small">
+            <i class="bi bi-cup-hot-fill me-1" aria-hidden="true"></i>
+            CanAI Café Intelligence &mdash; Hackathon
+          </span>
+        </div>
+        <div class="col-md-6 text-md-end mt-1 mt-md-0">
+          <span class="small">Django · Chart.js · Bootstrap 5</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="{% static 'api/js/common.js' %}"></script>
+  <script src="{% static 'api/js/services.js' %}"></script>
+  <script src="{% static 'api/js/scenario.js' %}?v=2"></script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
