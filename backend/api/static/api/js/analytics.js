@@ -2,81 +2,19 @@
  * analytics.js – Sales Insights page
  */
 let _data = null;
-let _activeMetric = 'revenue';
 
-const METRICS = {
-  revenue:      { field:'total_revenue',      label:'Revenue (CAD)', fmt: formatCAD,  currency:true  },
-  quantity:     { field:'total_quantity',      label:'Quantity',      fmt: formatNum,  currency:false },
-  transactions: { field:'unique_transactions', label:'Transactions',  fmt: formatNum,  currency:false },
-};
+const METRIC = { field: 'total_revenue', label: 'Revenue (CAD)', currency: true };
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     _data = await getSalesInsights();
-    populateFilters(_data);
     renderAll(_data);
   } catch (e) {
-    ['monthly-chart', 'item-chart', 'prov-chart', 'payment-chart', 'loc-chart'].forEach(id =>
+    ['monthly-chart', 'item-tbody', 'prov-chart', 'payment-chart', 'loc-chart'].forEach(id =>
       showError(id, `Could not load data: ${e.message}`)
     );
   }
 });
-
-/* ----------------------------------------------------------
-   Filters
-   ---------------------------------------------------------- */
-function populateFilters({ items, provinces, locations, paymentMethods }) {
-  items.forEach(r          => document.getElementById('f-item')?.add(new Option(r.item,     r.item)));
-  provinces.forEach(r      => document.getElementById('f-province')?.add(new Option(r.province, r.province)));
-  locations.forEach(r      => document.getElementById('f-location')?.add(new Option(r.location, r.location)));
-  paymentMethods.forEach(r => document.getElementById('f-payment')?.add(new Option(r.method,  r.method)));
-}
-
-function getFilters() {
-  return {
-    item:     document.getElementById('f-item')?.value     || '',
-    province: document.getElementById('f-province')?.value || '',
-    location: document.getElementById('f-location')?.value || '',
-    payment:  document.getElementById('f-payment')?.value  || '',
-  };
-}
-
-function applyFilters() {
-  const f = getFilters();
-  const hasFilter = Object.values(f).some(v => v !== '');
-  document.getElementById('filter-badge').style.display = hasFilter ? 'inline-block' : 'none';
-  renderAll({
-    trends:         _data.trends,
-    items:          f.item     ? _data.items.filter(r => r.item     === f.item)     : _data.items,
-    provinces:      f.province ? _data.provinces.filter(r => r.province === f.province) : _data.provinces,
-    locations:      f.location ? _data.locations.filter(r => r.location === f.location) : _data.locations,
-    paymentMethods: f.payment  ? _data.paymentMethods.filter(r => r.method === f.payment) : _data.paymentMethods,
-  });
-}
-
-function resetFilters() {
-  ['f-item','f-province','f-location','f-payment'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  document.getElementById('filter-badge').style.display = 'none';
-  renderAll(_data);
-}
-
-/* ----------------------------------------------------------
-   Metric selector
-   ---------------------------------------------------------- */
-function setMetric(metric) {
-  _activeMetric = metric;
-  ['revenue','quantity','transactions'].forEach(m => {
-    const btn = document.getElementById(`btn-${m}`);
-    if (btn) {
-      btn.classList.toggle('active', m === metric);
-      btn.setAttribute('aria-pressed', String(m === metric));
-    }
-  });
-  applyFilters();
-}
 
 /* ----------------------------------------------------------
    Render all sections
@@ -91,15 +29,13 @@ function renderAll(d) {
 }
 
 /* ----------------------------------------------------------
-   Single monthly chart (driven by active metric)
+   Monthly revenue chart
    ---------------------------------------------------------- */
 function renderMonthlyChart(trends) {
   if (!trends?.length) return;
-  const m = METRICS[_activeMetric];
-  document.getElementById('monthly-chart-title').textContent = `Monthly ${m.label} — 2023`;
   buildLineChart('monthly-chart', trends.map(r => r.month),
-    [{ label: m.label, data: trends.map(r => r[m.field]), ...lineDefaults(COLORS.coffee) }],
-    { isCurrency: m.currency, yLabel: m.label });
+    [{ label: METRIC.label, data: trends.map(r => r[METRIC.field]), ...lineDefaults(COLORS.coffee) }],
+    { isCurrency: METRIC.currency, yLabel: METRIC.label });
 }
 
 /* ----------------------------------------------------------
@@ -144,12 +80,11 @@ function renderInsightCards(d) {
 }
 
 /* ----------------------------------------------------------
-   Item table only
+   Item table
    ---------------------------------------------------------- */
 function renderItemCharts(items) {
   if (!items?.length) return;
-  const m = METRICS[_activeMetric];
-  const sorted = [...items].sort((a, b) => b[m.field] - a[m.field]);
+  const sorted = [...items].sort((a, b) => b.total_revenue - a.total_revenue);
   document.getElementById('item-tbody').innerHTML = sorted.map((r, i) => `
     <tr>
       <td><span class="rank-badge">${i + 1}</span></td>
@@ -161,17 +96,15 @@ function renderItemCharts(items) {
 }
 
 /* ----------------------------------------------------------
-   Province chart – vertical bars, single colour
+   Province chart – vertical bars
    ---------------------------------------------------------- */
 function renderProvinceCharts(provinces) {
   if (!provinces?.length) return;
-  const m = METRICS[_activeMetric];
-  const sorted = [...provinces].sort((a, b) => b[m.field] - a[m.field]);
-  document.getElementById('prov-chart-title').textContent = `${m.label} by Province`;
+  const sorted = [...provinces].sort((a, b) => b.total_revenue - a.total_revenue);
   buildBarChart('prov-chart', sorted.map(r => r.province),
-    [{ label: m.label, data: sorted.map(r => r[m.field]),
+    [{ label: 'Revenue (CAD)', data: sorted.map(r => r.total_revenue),
        backgroundColor: COLORS.amber + 'CC', borderRadius: 4 }],
-    { isCurrency: m.currency, yLabel: m.label });
+    { isCurrency: true, yLabel: 'Revenue (CAD)' });
 
   document.getElementById('prov-tbody').innerHTML = sorted.map((r, i) => `
     <tr>

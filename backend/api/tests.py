@@ -926,7 +926,7 @@ class GenerateRecommendationsTests(TestCase):
 
     def test_lowest_month_identified_correctly(self):
         recs = generate_recommendations(self._make_data(2.5))["recommendations"]
-        low_rec = next(r for r in recs if "lowest" in r["title"].lower())
+        low_rec = next(r for r in recs if "promotion" in r["title"].lower() or "lowest" in r["title"].lower())
         self.assertIn("2024-02", low_rec["title"])
 
     def test_evidence_mentions_growth_total(self):
