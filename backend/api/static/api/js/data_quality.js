@@ -1,14 +1,14 @@
 /**
  * data_quality.js – Data Quality Centre page.
  * Uses getDataQualitySummary() from services.js.
- *
- * Total rows = 10,000 (known dataset constant — used for quality score formula).
+ * Total row count is read from the backend — no hardcoded constants.
  */
-const TOTAL_ROWS = 10000;
+let TOTAL_ROWS = 10000;
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    const { summary, cleaningActions } = await getDataQualitySummary();
+    const { summary, cleaningActions, totalRows } = await getDataQualitySummary();
+    TOTAL_ROWS = totalRows || TOTAL_ROWS;
     renderQualityScore(summary);
     renderBeforeAfter(summary);
     renderIssueCards(summary);

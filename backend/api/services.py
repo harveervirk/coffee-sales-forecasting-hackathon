@@ -76,6 +76,7 @@ def get_sales_summary(filepath: str) -> dict:
     unknown_location_count = int((~df["Location"].isin(KNOWN_LOCATIONS)).sum())
 
     return {
+        "total_rows": len(df),
         "total_revenue": total_revenue,
         "total_quantity": total_quantity,
         "unique_transactions": unique_transactions,
@@ -129,3 +130,88 @@ def get_location_breakdown(filepath: str) -> list:
     df = _load_and_normalise(filepath)
     allowed = df[df["Location"].isin(ALLOWED_LOCATIONS_WITH_UNKNOWN)]
     return _agg_to_records(allowed, "Location", "location")
+
+
+def get_payment_breakdown(filepath: str) -> list:
+    """Return per-payment-method counts and percentages, sorted by count descending."""
+    df = pd.read_excel(filepath)
+    total = len(df)
+    counts = df["Payment Method"].value_counts()
+    return [
+        {
+            "method": str(method),
+            "count": int(count),
+            "pct": round(float(count) / total * 100, 1),
+        }
+        for method, count in counts.items()
+    ]
+
+
+def get_data_quality_report(filepath: str) -> dict:
+    """Return a data quality report with computed cleaning action details."""
+    df = pd.read_excel(filepath)
+    total_rows = len(df)
+
+    parsed_dates = pd.to_datetime(df["Transaction Date"], errors="coerce")
+    invalid_date_count = int(parsed_dates.isna().sum())
+    unknown_payment_count = int((~df["Payment Method"].isin(KNOWN_PAYMENTS)).sum())
+    unknown_location_count = int((~df["Location"].isin(KNOWN_LOCATIONS)).sum())
+    duplicate_count = total_rows - int(df["Transaction ID"].nunique())
+
+    item_raw = df["Item"].astype(str)
+    item_norm = item_raw.str.strip().str.title()
+    item_inconsistencies = int((item_raw != item_norm).sum())
+
+    prov_raw = df["Province"].astype(str)
+    prov_norm = prov_raw.str.strip().str.title()
+    province_inconsistencies = int((prov_raw != prov_norm).sum())
+
+    cleaning_actions = [
+        {
+            "issue": "Duplicate Transaction IDs",
+            "affected": duplicate_count,
+            "resolution": "Excluded from unique-transaction count",
+            "reason": "Duplicate TXN IDs may be re-submitted orders or data-entry errors.",
+            "status": "Retained",
+        },
+        {
+            "issue": "Invalid Transaction Dates",
+            "affected": invalid_date_count,
+            "resolution": "Excluded from forecasting; revenue counted in totals",
+            "reason": "Unparseable dates cannot be placed on a time axis.",
+            "status": "Corrected",
+        },
+        {
+            "issue": "Unknown Payment Methods",
+            "affected": unknown_payment_count,
+            "resolution": "Retained with \"Unknown\" label",
+            "reason": "Revenue is valid; only the payment channel is unidentifiable.",
+            "status": "Retained",
+        },
+        {
+            "issue": "Unknown Location Values",
+            "affected": unknown_location_count,
+            "resolution": "Categorised as \"UNKNOWN\" in location breakdowns",
+            "reason": "Location data is incomplete but revenue is real.",
+            "status": "Retained",
+        },
+        {
+            "issue": "Province Name Inconsistencies",
+            "affected": province_inconsistencies,
+            "resolution": "Whitespace trimmed; Title Case applied",
+            "reason": "Inconsistent casing caused provinces to appear as multiple entries.",
+            "status": "Corrected",
+        },
+        {
+            "issue": "Item Name Inconsistencies",
+            "affected": item_inconsistencies,
+            "resolution": "Whitespace trimmed; Title Case applied",
+            "reason": "Normalised names enable accurate product-level aggregation.",
+            "status": "Corrected",
+        },
+    ]
+
+    return {
+        "total_rows": total_rows,
+        "cleaning_actions": cleaning_actions,
+    }

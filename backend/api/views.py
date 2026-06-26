@@ -11,9 +11,11 @@ from .forecasting import (
     read_metrics_csv,
 )
 from .services import (
+    get_data_quality_report,
     get_item_breakdown,
     get_location_breakdown,
     get_monthly_trends,
+    get_payment_breakdown,
     get_province_breakdown,
     get_sales_summary,
 )
@@ -67,6 +69,16 @@ def sales_provinces(request):
 @require_GET
 def sales_locations(request):
     return JsonResponse(get_location_breakdown(str(SALES_FILE)), safe=False)
+
+
+@require_GET
+def sales_payments(request):
+    return JsonResponse(get_payment_breakdown(str(SALES_FILE)), safe=False)
+
+
+@require_GET
+def data_quality_report(request):
+    return JsonResponse(get_data_quality_report(str(SALES_FILE)))
 
 
 # ---------------------------------------------------------------------------

@@ -1,66 +1,61 @@
 /**
  * services.js – Centralised data service for CanAI Café Intelligence.
- *
- * Mock data is clearly labelled and isolated.
- * Replace async service functions with real API calls as endpoints become available.
+ * All data is fetched from backend API endpoints; no static mock data.
  */
 
 /* ──────────────────────────────────────────────────────────────────────────
-   MOCK DATA  (grounded in real dataset; replace sections with API calls)
+   Internal helpers
    ────────────────────────────────────────────────────────────────────────── */
-const MOCK = {
-  // Payment-method distribution – no backend endpoint available.
-  // Total 10,000 rows; unknown_payment_method_count = 555 (UNKNOWN + ERR_PM_102).
-  paymentMethods: [
-    { method: 'Credit Card (VISA)',       count: 3190, pct: 31.9 },
-    { method: 'Credit Card (Mastercard)', count: 2870, pct: 28.7 },
-    { method: 'Cash',                     count: 1945, pct: 19.5 },
-    { method: 'Debit Card',               count: 1440, pct: 14.4 },
-    { method: 'Unknown / Invalid',        count:  555, pct:  5.5 },
-  ],
 
-  // Data-cleaning actions – derived from summary API + data exploration.
-  cleaningActions: [
-    { issue: 'Duplicate Transaction IDs',                   affected: 44,  resolution: 'Excluded from unique-transaction count',          reason: 'Duplicate TXN IDs may be re-submitted orders or data-entry errors.', status: 'Retained' },
-    { issue: 'Invalid Transaction Dates',                   affected: 240, resolution: 'Excluded from forecasting; revenue counted in totals', reason: 'Unparseable dates cannot be placed on a time axis.',                  status: 'Corrected' },
-    { issue: 'Unknown Payment Methods (UNKNOWN, ERR_PM_102)', affected: 555, resolution: 'Retained with "Unknown" label',                reason: 'Revenue is valid; only the payment channel is unidentifiable.',        status: 'Retained' },
-    { issue: 'Unknown Location Values',                     affected: 878, resolution: 'Categorised as "UNKNOWN" in location breakdowns', reason: 'Location data is incomplete but revenue is real.',                      status: 'Retained' },
-    { issue: 'Province Name Inconsistencies',               affected: 312, resolution: 'Whitespace trimmed; Title Case applied',          reason: 'Inconsistent casing caused provinces to appear as multiple entries.',    status: 'Corrected' },
-    { issue: 'Item Name Inconsistencies',                   affected: 198, resolution: 'Whitespace trimmed; Title Case applied',          reason: 'Normalised names enable accurate product-level aggregation.',          status: 'Corrected' },
-  ],
+/**
+ * Build business alerts dynamically from real summary and forecast data.
+ * No hardcoded values — every metric comes from the API.
+ */
+function _buildAlerts(summary, forecast) {
+  const alerts = [];
+  const totalRows = summary.total_rows || summary.unique_transactions;
 
-  // Scenario baseline – 6-month projection from the forecast model.
-  scenarioBaseline: {
-    revenue:       40915,
-    transactions:  4978,
-    avgOrderValue: 54.7,
-  },
+  // Revenue forecast alert (only if forecast is available)
+  if (forecast && !forecast._error) {
+    const g = forecast.expected_growth_percent;
+    alerts.push({
+      type: g < 0 ? 'risk' : 'opportunity',
+      title: `Revenue Forecast ${g >= 0 ? 'Growth' : 'Decline'}`,
+      message: `Six-month forecast projects ${g >= 0 ? '+' : ''}${Number(g).toFixed(1)}% revenue versus the same period last year.`,
+      metric: `Forecast: ${formatCADFull(forecast.forecast_total_revenue)} · Growth: ${g >= 0 ? '+' : ''}${Number(g).toFixed(1)}%`,
+      action: g < 0
+        ? 'Review promotional pricing and Q1 traffic strategy.'
+        : 'Continue current strategy and explore expansion opportunities.',
+    });
+  }
 
-  // Business alerts – derived from actual data analysis.
-  alerts: [
-    {
-      type: 'risk',
-      title: 'Revenue Forecast Decline',
-      message: 'Six-month forecast projects −4.7% revenue versus the same period last year.',
-      metric: 'Forecast: $40,915 · Growth: −4.7%',
-      action: 'Review promotional pricing and Q1 traffic strategy.',
-    },
-    {
+  // Unknown location data quality alert
+  if (summary.unknown_location_count > 0) {
+    const pct = totalRows > 0
+      ? (summary.unknown_location_count / totalRows * 100).toFixed(2)
+      : 'N/A';
+    alerts.push({
       type: 'warning',
       title: 'Unknown Location Records',
-      message: '8.78% of records have no location — limiting regional analysis accuracy.',
-      metric: '878 of 10,000 rows',
+      message: `${pct}% of records have no location — limiting regional analysis accuracy.`,
+      metric: `${formatNum(summary.unknown_location_count)} of ${formatNum(totalRows)} rows`,
       action: 'Audit POS systems to capture location data consistently.',
-    },
-    {
+    });
+  }
+
+  // Top-item bundle opportunity alert
+  if (summary.top_item) {
+    alerts.push({
       type: 'opportunity',
-      title: 'Sandwich–Coffee Bundle',
-      message: 'Top two products together account for roughly 47% of total revenue.',
-      metric: 'Sandwich $20,696 + Coffee $19,320',
+      title: `${summary.top_item} Bundle Opportunity`,
+      message: `${summary.top_item} is the best-selling item. Bundle promotions with top products could increase average order value.`,
+      metric: `Top item: ${summary.top_item} · Avg order: ${formatCADFull(summary.average_transaction_value)}`,
       action: 'Trial a bundled promotion in top-performing locations.',
-    },
-  ],
-};
+    });
+  }
+
+  return alerts;
+}
 
 /* ──────────────────────────────────────────────────────────────────────────
    SERVICE FUNCTIONS
@@ -71,22 +66,30 @@ async function getExecutiveSummary() {
     fetchAPI('/api/sales/summary/'),
     fetchAPI('/api/forecast/').catch(e => ({ _error: e.message, _status: e.status })),
   ]);
-  return { summary, forecast, alerts: MOCK.alerts };
+  return { summary, forecast, alerts: _buildAlerts(summary, forecast) };
 }
 
 async function getSalesInsights() {
-  const [trends, items, provinces, locations] = await Promise.all([
+  const [trends, items, provinces, locations, paymentMethods] = await Promise.all([
     fetchAPI('/api/sales/trends/'),
     fetchAPI('/api/sales/items/'),
     fetchAPI('/api/sales/provinces/'),
     fetchAPI('/api/sales/locations/'),
+    fetchAPI('/api/sales/payments/'),
   ]);
-  return { trends, items, provinces, locations, paymentMethods: MOCK.paymentMethods };
+  return { trends, items, provinces, locations, paymentMethods };
 }
 
 async function getDataQualitySummary() {
-  const summary = await fetchAPI('/api/sales/summary/');
-  return { summary, cleaningActions: MOCK.cleaningActions };
+  const [summary, dqReport] = await Promise.all([
+    fetchAPI('/api/sales/summary/'),
+    fetchAPI('/api/data-quality/'),
+  ]);
+  return {
+    summary,
+    cleaningActions: dqReport.cleaning_actions,
+    totalRows: dqReport.total_rows,
+  };
 }
 
 async function getForecastData() {
@@ -101,6 +104,33 @@ async function getRecommendations() {
   return fetchAPI('/api/recommendations/');
 }
 
-function runScenario(params) {
-  return calculateScenario(MOCK.scenarioBaseline, params);
+/**
+ * Fetch the scenario baseline from real API data.
+ * Revenue comes from the six-month forecast; transaction count and average
+ * order value are derived from the 2023 summary.
+ */
+async function getScenarioBaseline() {
+  const [summary, forecast] = await Promise.all([
+    fetchAPI('/api/sales/summary/'),
+    fetchAPI('/api/forecast/').catch(e => ({ _error: e.message })),
+  ]);
+
+  const avgOrderValue = summary.average_transaction_value;
+
+  if (forecast && !forecast._error) {
+    const revenue = forecast.forecast_total_revenue;
+    const transactions = Math.max(1, Math.round(revenue / avgOrderValue));
+    return { revenue, transactions, avgOrderValue };
+  }
+
+  // Fallback when forecast CSVs have not been generated yet:
+  // estimate H1 using half of the 2023 annual revenue.
+  const revenue = Math.round(summary.total_revenue / 2);
+  const transactions = Math.max(1, Math.round(revenue / avgOrderValue));
+  return { revenue, transactions, avgOrderValue };
+}
+
+/** Kept for compatibility — delegates to calculateScenario in scenario.js. */
+function runScenario(baseline, params) {
+  return calculateScenario(baseline, params);
 }
