@@ -21,5 +21,7 @@ media/
 # Jupyter
 .ipynb_checkpoints/
 
-# macOS
+# Operating system files
 .DS_Store
+Thumbs.db
+Desktop.ini
