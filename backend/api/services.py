@@ -67,7 +67,7 @@ def get_sales_summary(filepath: str) -> dict:
     txn_totals = df.groupby("Transaction ID")["Total Spent"].sum()
     average_transaction_value = round(float(txn_totals.mean()), 2)
 
-    top_item = df["Item"].value_counts().idxmax()
+    top_item = df.groupby("Item")["Total Spent"].sum().idxmax()
 
     valid_province_mask = df["Province"].isin(VALID_PROVINCES)
     top_province = df.loc[valid_province_mask, "Province"].value_counts().idxmax()

@@ -12,51 +12,12 @@
 
 <div class="container-xl px-4 pb-4">
 
-  <!-- Filters + metric selector -->
-  <div class="filter-bar mb-4" role="search" aria-label="Data filters">
-    <div class="d-flex align-items-center gap-1">
-      <label for="f-item" class="mb-0">Item</label>
-      <select id="f-item" onchange="applyFilters()" aria-label="Filter by item">
-        <option value="">All items</option>
-      </select>
-    </div>
-    <div class="d-flex align-items-center gap-1">
-      <label for="f-province" class="mb-0">Province</label>
-      <select id="f-province" onchange="applyFilters()" aria-label="Filter by province">
-        <option value="">All provinces</option>
-      </select>
-    </div>
-    <div class="d-flex align-items-center gap-1">
-      <label for="f-location" class="mb-0">Location</label>
-      <select id="f-location" onchange="applyFilters()" aria-label="Filter by location">
-        <option value="">All locations</option>
-      </select>
-    </div>
-    <div class="d-flex align-items-center gap-1">
-      <label for="f-payment" class="mb-0">Payment</label>
-      <select id="f-payment" onchange="applyFilters()" aria-label="Filter by payment method">
-        <option value="">All methods</option>
-      </select>
-    </div>
-    <button class="btn btn-sm" style="background:var(--coffee);color:#fff;border-radius:6px;"
-            onclick="resetFilters()" aria-label="Reset all filters">
-      <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
-    </button>
-    <span id="filter-badge" class="filter-active-badge" style="display:none;">Filtered</span>
-    <div class="ms-auto d-flex align-items-center gap-1" role="group" aria-label="Select metric">
-      <span class="text-muted" style="font-size:.8rem;white-space:nowrap;">View:</span>
-      <button type="button" class="btn btn-sm active" id="btn-revenue" onclick="setMetric('revenue')" aria-pressed="true">Revenue</button>
-      <button type="button" class="btn btn-sm" id="btn-quantity" onclick="setMetric('quantity')" aria-pressed="false">Quantity</button>
-      <button type="button" class="btn btn-sm" id="btn-transactions" onclick="setMetric('transactions')" aria-pressed="false">Txns</button>
-    </div>
-  </div>
-
   <!-- Single monthly chart -->
   <div class="section-label mb-2"><i class="bi bi-calendar3 me-1"></i>Monthly Trends</div>
   <div class="row g-4 mb-4">
     <div class="col-12">
       <div class="chart-container">
-        <div class="chart-title" id="monthly-chart-title">Monthly Revenue (2023)</div>
+        <div class="chart-title">Monthly Revenue — 2023</div>
         <canvas id="monthly-chart" height="90" aria-label="Monthly metric chart" role="img"></canvas>
       </div>
     </div>
@@ -91,7 +52,7 @@
     <div class="col-lg-6">
       <div class="section-label mb-2"><i class="bi bi-map me-1"></i>By Province</div>
       <div class="chart-container mb-3">
-        <div class="chart-title" id="prov-chart-title">Revenue by Province</div>
+        <div class="chart-title">Revenue by Province</div>
         <canvas id="prov-chart" height="220" aria-label="Revenue by province chart" role="img"></canvas>
       </div>
       <div class="chart-container">
@@ -109,7 +70,6 @@
     <div class="col-lg-6">
       <div class="section-label mb-2">
         <i class="bi bi-credit-card me-1"></i>Payment Methods
-        <small class="text-muted ms-1" style="font-size:.72rem;font-weight:400;">(estimated)</small>
       </div>
       <div class="chart-container mb-3">
         <div class="chart-title">Payment Method Distribution</div>

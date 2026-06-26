@@ -84,7 +84,7 @@ function renderCards(recs) {
     return `
       <div class="card rec-card ${m.card} mb-3" role="listitem">
         <div class="card-body p-4">
-          <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+          <div class="d-flex align-items-start justify-content-between gap-3">
             <div class="flex-fill">
               <div class="rec-title">${r.title}</div>
               <div class="rec-message">${r.message}</div>

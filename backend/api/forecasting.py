@@ -314,95 +314,173 @@ def read_metrics_csv(output_dir: str) -> dict:
 # Deterministic recommendations
 # ---------------------------------------------------------------------------
 
-def generate_recommendations(forecast_data: dict) -> dict:
+def generate_recommendations(
+    forecast_data: dict,
+    summary_data: dict | None = None,
+    items_data: list | None = None,
+) -> dict:
     """
-    Generate rule-based recommendations from actual forecast values.
+    Generate rule-based, actionable recommendations for café owners.
     All claims are derived from the supplied data — nothing is hardcoded.
 
     Expected keys in forecast_data:
-        expected_growth_percent, monthly_forecast, selected_model,
-        forecast_total_revenue, best_model_mae
+        expected_growth_percent, monthly_forecast, forecast_total_revenue,
+        best_model_mae, best_model_mape
+    Optional summary_data keys (from get_sales_summary):
+        average_transaction_value, top_province, unknown_location_count,
+        unknown_payment_method_count, total_rows
+    Optional items_data: list of {item, total_revenue} dicts from get_item_breakdown
     """
     recs    = []
     growth  = float(forecast_data.get("expected_growth_percent", 0.0))
     monthly = forecast_data.get("monthly_forecast", [])
-    model   = str(forecast_data.get("selected_model", ""))
     total   = float(forecast_data.get("forecast_total_revenue", 0.0))
-    mae     = forecast_data.get("best_model_mae")
+    mape    = forecast_data.get("best_model_mape")
 
-    # Rule 1: growth direction
+    # --- High priority -------------------------------------------------------
+
+    # Rule 1: revenue trend response
     if growth >= 0:
         recs.append({
             "priority": "high",
-            "title":    "Positive Revenue Growth Expected",
+            "title":    "Capitalise on Positive Revenue Growth",
             "message":  (
-                f"Revenue is forecast to grow by {growth:.1f}% compared to the same six-month "
-                "period last year. Consider scaling inventory and staffing to meet higher demand."
+                f"Revenue is forecast to grow by {growth:.1f}% over the next six months. "
+                "This is the time to scale up: hire seasonal staff, increase stock orders, "
+                "and launch a loyalty or referral programme to lock in returning customers."
             ),
-            "evidence": f"Six-month forecast total: ${total:,.2f}",
+            "evidence": f"Six-month forecast total: ${total:,.2f} · Growth: +{growth:.1f}%",
         })
     else:
         recs.append({
             "priority": "high",
-            "title":    "Revenue Decline Expected",
+            "title":    "Counter the Forecasted Revenue Decline",
             "message":  (
-                f"Revenue is forecast to decline by {abs(growth):.1f}% compared to the same "
-                "six-month period last year. Review promotions, pricing, and low-performing periods."
+                f"Revenue is forecast to fall by {abs(growth):.1f}% over the next six months. "
+                "Introduce limited-time offers and combo deals on high-margin items, "
+                "revisit pricing on slower-selling products, and target lapsed customers "
+                "with a win-back email or loyalty reward campaign."
             ),
-            "evidence": f"Six-month forecast total: ${total:,.2f}",
+            "evidence": f"Six-month forecast total: ${total:,.2f} · Growth: {growth:.1f}%",
         })
 
+    # Rule 2: average transaction uplift (if summary available)
+    if summary_data:
+        atv = float(summary_data.get("average_transaction_value", 0.0))
+        if atv > 0:
+            target = round(atv * 1.15, 2)
+            recs.append({
+                "priority": "high",
+                "title":    "Increase Average Transaction Value",
+                "message":  (
+                    f"The current average transaction is ${atv:,.2f}. "
+                    f"Offering upsells at the till — a pastry with every hot drink, "
+                    f"a size upgrade, or a meal deal — could push this to ${target:,.2f}, "
+                    f"adding meaningful revenue without requiring more customers."
+                ),
+                "evidence": f"Current avg transaction: ${atv:,.2f} · Target: ${target:,.2f} (+15%)",
+            })
+
+    # --- Medium priority -----------------------------------------------------
+
     if monthly:
-        # Rule 2: peak month
+        # Rule 3: peak month preparation
         peak = max(monthly, key=lambda x: x["forecast_revenue"])
         recs.append({
             "priority": "medium",
-            "title":    f"Peak Sales Expected in {peak['month']}",
+            "title":    f"Prepare for Peak Demand in {peak['month']}",
             "message":  (
-                f"{peak['month']} is the highest forecast month at ${peak['forecast_revenue']:,.2f}. "
-                "Ensure adequate stock and staff coverage heading into this period."
+                f"{peak['month']} is the busiest forecast month at ${peak['forecast_revenue']:,.2f}. "
+                "Confirm supplier contracts and delivery schedules at least four weeks in advance, "
+                "schedule additional staff shifts, and pre-prepare best-selling items to reduce "
+                "wait times during rush hours."
             ),
-            "evidence": (
-                f"Forecast range: ${peak['lower_bound']:,.2f} – ${peak['upper_bound']:,.2f}"
-            ),
+            "evidence": f"Forecast: ${peak['forecast_revenue']:,.2f}",
         })
 
-        # Rule 3: lowest month
+        # Rule 4: slow month activation
         low = min(monthly, key=lambda x: x["forecast_revenue"])
+        revenue_gap = peak["forecast_revenue"] - low["forecast_revenue"]
         recs.append({
             "priority": "medium",
-            "title":    f"Lowest Sales Expected in {low['month']}",
+            "title":    f"Run a Promotion Campaign in {low['month']}",
             "message":  (
-                f"{low['month']} is the lowest forecast month at ${low['forecast_revenue']:,.2f}. "
-                "Consider targeted promotions or events to lift revenue during this period."
+                f"{low['month']} is the quietest forecast month at ${low['forecast_revenue']:,.2f} "
+                f"— ${revenue_gap:,.2f} below the peak month. "
+                "Run a targeted campaign: a weekday discount, a bundle deal, or a community event "
+                "to bring in foot traffic during this slower window."
+            ),
+            "evidence": f"Forecast: ${low['forecast_revenue']:,.2f} · Gap vs peak: ${revenue_gap:,.2f}",
+        })
+
+    # Rule 5: top product bundle strategy (if item data available)
+    if items_data and len(items_data) >= 2:
+        top   = items_data[0]
+        second = items_data[1]
+        combined = top["total_revenue"] + second["total_revenue"]
+        recs.append({
+            "priority": "medium",
+            "title":    f"Bundle {top['item']} and {second['item']} to Boost Sales",
+            "message":  (
+                f"{top['item']} and {second['item']} are your top two revenue-generating products, "
+                f"together accounting for ${combined:,.2f} in 2023. "
+                f"Pair them in a discounted combo deal to increase basket size, "
+                "encourage customers who buy one to try the other, and improve perceived value."
             ),
             "evidence": (
-                f"Forecast range: ${low['lower_bound']:,.2f} – ${low['upper_bound']:,.2f}"
+                f"{top['item']}: ${top['total_revenue']:,.2f} · "
+                f"{second['item']}: ${second['total_revenue']:,.2f}"
             ),
         })
 
-    # Rule 4: model accuracy
-    mae_label = f"{mae:.2f} revenue units per day" if mae is not None else "N/A"
-    recs.append({
-        "priority": "low",
-        "title":    f"Forecast Model: {model}",
-        "message":  (
-            f"Forecasts were generated using {model}, selected as the best-performing model "
-            f"based on mean absolute error. Test period MAE: {mae_label}."
-        ),
-        "evidence": f"MAE = {mae:.4f}" if mae is not None else "MAE = N/A",
-    })
+    # Rule 6: focus on top province (if summary available)
+    if summary_data:
+        top_prov = summary_data.get("top_province")
+        if top_prov:
+            recs.append({
+                "priority": "medium",
+                "title":    f"Double Down on {top_prov}",
+                "message":  (
+                    f"{top_prov} is your highest-revenue province. "
+                    "Prioritise regional marketing spend here — social media ads, local partnerships, "
+                    "and in-store events. A strong performance in your top market will have the "
+                    "biggest impact on overall revenue."
+                ),
+                "evidence": f"Top province by 2023 revenue: {top_prov}",
+            })
 
-    # Rule 5: uncertainty reminder
-    recs.append({
-        "priority": "low",
-        "title":    "Account for Forecast Uncertainty",
-        "message":  (
-            "The lower and upper bounds shown are approximate 95% prediction ranges "
-            "based on holdout residual standard deviation — not formal confidence intervals. "
-            "Use them to plan for realistic best- and worst-case revenue scenarios."
-        ),
-        "evidence": "Bounds = forecast ± 1.96 × holdout residual std",
-    })
+    # --- Low priority --------------------------------------------------------
+
+    # Rule 7: fix location data gaps (if summary available and significant)
+    if summary_data:
+        unknown_loc  = int(summary_data.get("unknown_location_count", 0))
+        total_rows   = int(summary_data.get("total_rows", 10000))
+        loc_pct      = round(unknown_loc / total_rows * 100, 1) if total_rows > 0 else 0
+        if unknown_loc > 0:
+            recs.append({
+                "priority": "low",
+                "title":    "Fix Location Tracking to Unlock Regional Insights",
+                "message":  (
+                    f"{unknown_loc:,} transactions ({loc_pct}% of all sales) are missing a location. "
+                    "This makes it impossible to compare performance across branches or delivery channels. "
+                    "Work with your POS provider to enforce location capture on every transaction — "
+                    "this is a one-time fix that pays off with every future analysis."
+                ),
+                "evidence": f"{unknown_loc:,} of {total_rows:,} records have no location",
+            })
+
+    # Rule 8: model accuracy note (brief, practical framing)
+    if mape is not None:
+        accuracy = max(0.0, 100.0 - float(mape))
+        recs.append({
+            "priority": "low",
+            "title":    "Treat the Forecast as a Planning Guide, Not a Guarantee",
+            "message":  (
+                f"The forecasting model explains roughly {accuracy:.0f}% of revenue variation. "
+                "Use the monthly figures to set staff rosters, stock orders, and budget targets — "
+                "but review actuals every month and adjust plans as real data comes in."
+            ),
+            "evidence": f"Model MAPE: {float(mape):.1f}% · Indicative accuracy: ~{accuracy:.0f}%",
+        })
 
     return {"recommendations": recs}

@@ -20,14 +20,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 /* ----------------------------------------------------------
    KPI Cards
    ---------------------------------------------------------- */
+
+/**
+ * Font-size for plain-text KPI values (item names, province names).
+ * Word characters are ~30 % wider than digits, so thresholds are tighter.
+ */
+function textKpiStyle(val) {
+  const len = String(val).length;
+  const fs  = len > 12 ? '0.9rem' : len > 6 ? '1.05rem' : '1.2rem';
+  return `font-size:${fs};line-height:1.25;word-break:break-word;`;
+}
+
 function renderKPIs(s) {
   const cards = [
-    { icon:'bi-currency-dollar', bg:'#FFF7ED', col:'#C07A2F', value: formatCAD(s.total_revenue),           label:'Total Revenue',           sub:'All 2023 transactions' },
-    { icon:'bi-receipt',         bg:'#EFF6FF', col:'#1D4ED8', value: formatNum(s.unique_transactions),      label:'Unique Transactions',     sub:'By Transaction ID' },
-    { icon:'bi-calculator',      bg:'#F5F3FF', col:'#7C3AED', value: formatCAD(s.average_transaction_value),label:'Avg Transaction Value',   sub:'Per transaction' },
-    { icon:'bi-box-seam',        bg:'#F0FDF4', col:'#15803D', value: formatNum(s.total_quantity),           label:'Units Sold',              sub:'Total quantity' },
-    { icon:'bi-star-fill',       bg:'#FFFBEB', col:'#D97706', value: s.top_item,                            label:'Best-Selling Item',       sub:'By revenue' },
-    { icon:'bi-geo-alt-fill',    bg:'#FFF1F2', col:'#BE123C', value: s.top_province,                       label:'Top Province',            sub:'By revenue' },
+    { icon:'bi-currency-dollar', bg:'#FFF7ED', col:'#C07A2F', value: formatCAD(s.total_revenue),            label:'Total Revenue',         sub:'All 2023 transactions' },
+    { icon:'bi-receipt',         bg:'#EFF6FF', col:'#1D4ED8', value: formatNum(s.unique_transactions),       label:'Unique Transactions',   sub:'By Transaction ID' },
+    { icon:'bi-calculator',      bg:'#F5F3FF', col:'#7C3AED', value: formatCAD(s.average_transaction_value), label:'Avg Transaction Value', sub:'Per transaction' },
+    { icon:'bi-box-seam',        bg:'#F0FDF4', col:'#15803D', value: formatNum(s.total_quantity),            label:'Units Sold',            sub:'Total quantity' },
+    { icon:'bi-star-fill',       bg:'#FFFBEB', col:'#D97706', value: s.top_item,     label:'Best-Selling Item', sub:'By revenue', text: true },
+    { icon:'bi-geo-alt-fill',    bg:'#FFF1F2', col:'#BE123C', value: s.top_province, label:'Top Province',      sub:'By revenue', text: true },
   ];
   document.getElementById('kpi-row').innerHTML = cards.map(c => `
     <div class="col-6 col-md-4 col-xl-2">
@@ -37,7 +48,7 @@ function renderKPIs(s) {
             <i class="bi ${c.icon}" aria-hidden="true"></i>
           </div>
           <div class="flex-fill" style="min-width:0;">
-            <div class="kpi-value" style="word-break:break-word;">${c.value}</div>
+            <div class="kpi-value" style="${c.text ? textKpiStyle(c.value) : ''}">${c.value}</div>
             <div class="kpi-label">${c.label}</div>
             <div class="kpi-sub">${c.sub}</div>
           </div>

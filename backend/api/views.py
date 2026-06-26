@@ -126,15 +126,23 @@ def forecast_metrics(request):
 def recommendations(request):
     """
     GET /api/recommendations/
-    Returns deterministic recommendations derived from actual forecast values.
+    Returns actionable recommendations derived from forecast, summary, and item data.
     Responds 503 if the forecast CSVs have not been generated yet.
     """
     try:
-        data = read_forecast_csv(str(OUTPUT_DIR))
+        forecast_data = read_forecast_csv(str(OUTPUT_DIR))
     except FileNotFoundError:
         return JsonResponse({"error": _FORECAST_NOT_READY}, status=503)
 
-    return JsonResponse(generate_recommendations(data))
+    # Enrich recommendations with live sales context where available.
+    try:
+        summary_data = get_sales_summary(str(SALES_FILE))
+        items_data   = get_item_breakdown(str(SALES_FILE))
+    except Exception:
+        summary_data = None
+        items_data   = None
+
+    return JsonResponse(generate_recommendations(forecast_data, summary_data, items_data))
 
 
 # ---------------------------------------------------------------------------
